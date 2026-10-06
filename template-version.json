@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "files": {
+    "src/lib/types.ts": [
+      "7816d6ea0d133a33420faa26dce31cea56894e5d419eac335b7ca18d9fed9680"
+    ],
+    "src/components/widgets.tsx": [
+      "e4a120135c1f95a4b242e1743db89f52a4de8153bd7548174bc7d13eef08ba8b"
+    ],
+    "src/components/data-table.tsx": ["missing"],
+    "src/components/shell.tsx": [
+      "c5671860289c1abbed1e51978ad416cc9881743bef9a7cf0d5601b619268eedd",
+      "cb10c0c43294a57bcfa972e3a402aa8902fb71205d4705b689dd1dfcd200cba1"
+    ],
+    "src/app/globals.css": [
+      "205a3090da3fe24bcd9e632944726dc8a75ae9f291f3457dc73e8d357e69f54f"
+    ]
+  }
+}

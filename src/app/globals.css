@@ -1,4 +1,87 @@
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;450;500;550;600;650;700&family=Manrope:wght@400;500;600;650;700;750;800&display=swap");
+.inventory-toolbar {
+  display: flex;
+  gap: 10px;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+.inventory-toolbar input,
+.inventory-toolbar select {
+  min-width: 150px;
+  flex: 1;
+  max-width: 100%;
+  padding: 9px;
+  border: 1px solid #dce5dd;
+  border-radius: 5px;
+  background: #fafcf9;
+  color: #29443a;
+}
+.inventory-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0;
+  max-height: 150px;
+  overflow: auto;
+}
+.inventory-groups button {
+  display: flex;
+  gap: 12px;
+  padding: 6px 9px;
+  border: 1px solid #dce5dd;
+  border-radius: 5px;
+  background: #f4f8f3;
+  color: #395448;
+  max-width: 100%;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.inventory-groups strong {
+  margin-left: auto;
+}
+.inventory-summary summary {
+  font-size: 12px;
+  color: #596b5b;
+  cursor: pointer;
+}
+.inventory-pagination {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  padding: 12px 0;
+}
+.inventory-pagination span {
+  margin-right: auto;
+}
+.inventory-pagination button {
+  padding: 6px 10px;
+  background: #f4f8f3;
+  border: 1px solid #dce5dd;
+  border-radius: 4px;
+  color: #29443a;
+}
+.table-sort {
+  border: 0;
+  background: none;
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.inventory-table {
+  min-width: 0;
+}
+.inventory-table td {
+  max-width: 330px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.inventory-table .muted {
+  font-size: 11px;
+}
 :root {
   --bg: #f8faf9;
   --ink: #253831;

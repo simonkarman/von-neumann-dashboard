@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useId, useState } from "react";
+import { DataTable } from "./data-table";
 import {
   Activity,
   ArrowDownToLine,
@@ -91,7 +92,7 @@ function Widget({ widget: w }: { widget: WidgetSpec }) {
     if (w.type === "logs")
       api(`/api/sessions/${getSessionId()}/query`, {
         connectorId: w.connectorId,
-        query: { operation: "log_groups" },
+        query: { operation: "log_groups", region: w.query?.region },
       })
         .then((r) => {
           if (alive) setResources(r.items);
@@ -150,7 +151,11 @@ function Widget({ widget: w }: { widget: WidgetSpec }) {
             {w.type === "text"
               ? "NOTE"
               : "AWS · " +
-                (w.query?.operation === "table" ? "DYNAMODB" : "CLOUDWATCH")}
+                (w.query?.operation === "table"
+                  ? "DYNAMODB"
+                  : ["cpu", "logs"].includes(w.query?.operation || "")
+                    ? "CLOUDWATCH"
+                    : w.query?.operation.replaceAll("_", " ").toUpperCase())}
           </span>
           <h3>{w.title}</h3>
         </div>
@@ -177,20 +182,41 @@ function Widget({ widget: w }: { widget: WidgetSpec }) {
         (data ? (
           <>
             <div className="metric-value">
-              {data.points?.at(-1)?.value?.toFixed(1) ?? "—"}
-              <span>%</span>
+              {data.points
+                ? (data.points
+                    .at(-1)
+                    ?.value?.toLocaleString(undefined, {
+                      maximumFractionDigits: 1,
+                    }) ?? "—")
+                : (data.count ?? data.items?.length ?? "—")}
+              <span>{data.points ? data.unit || "%" : ""}</span>
               <small>
                 <span className="dot" />
-                Latest average
+                {data.points
+                  ? `Latest ${data.statistic?.toLowerCase() || "average"}`
+                  : data.truncated
+                    ? "Records returned (partial)"
+                    : "Records returned"}
               </small>
             </div>
             {w.type === "chart" && (
-              <Chart points={data.points || []} threshold={w.threshold} />
+              <Chart
+                points={data.points || []}
+                threshold={w.threshold}
+                unit={data.unit || "%"}
+                label={
+                  w.query?.operation === "cpu" ? "CPU utilization" : w.title
+                }
+              />
             )}
             <div className="widget-footer">
               <span>
                 <Activity size={12} />
-                {w.query?.operation === "cpu" ? w.query.instanceId : ""}
+                {w.query?.operation === "cpu"
+                  ? w.query.instanceId
+                  : w.query?.operation === "aws_metric"
+                    ? w.query.resourceId
+                    : ""}
               </span>
               <span>
                 {data.partial ? "Partial results · " : ""}
@@ -267,56 +293,15 @@ function Widget({ widget: w }: { widget: WidgetSpec }) {
         </div>
       )}
       {w.type === "table" && data && (
-        <>
-          <div className="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  {Object.keys(data.items?.[0] || {})
-                    .slice(0, 7)
-                    .map((k) => (
-                      <th key={k}>{k}</th>
-                    ))}
-                </tr>
-              </thead>
-              <tbody>
-                {(data.items || []).slice(0, 100).map((row: any, i: number) => (
-                  <tr key={i}>
-                    {Object.keys(data.items?.[0] || {})
-                      .slice(0, 7)
-                      .map((k) => (
-                        <td key={k}>
-                          {k === "status" ? (
-                            <span className="status-tag">{String(row[k])}</span>
-                          ) : typeof row[k] === "object" ? (
-                            JSON.stringify(row[k])
-                          ) : (
-                            String(row[k] ?? "")
-                          )}
-                        </td>
-                      ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {!data.items?.length && (
-              <p className="muted">No matching records.</p>
-            )}
-          </div>
-          <div className="widget-footer">
-            <span>
-              <Database size={12} />
-              {data.items?.length || 0} records · showing up to 100
-            </span>
-            <span>
-              {data.truncated
-                ? "Partial sample"
-                : data.mode === "demo"
-                  ? "Demo data"
-                  : "Live data"}
-            </span>
-          </div>
-        </>
+        <DataTable
+          data={data}
+          groupBy={
+            w.groupBy ||
+            (w.query?.operation === "cloudformation_resources"
+              ? "stack"
+              : undefined)
+          }
+        />
       )}
     </section>
   );
@@ -324,9 +309,13 @@ function Widget({ widget: w }: { widget: WidgetSpec }) {
 function Chart({
   points,
   threshold,
+  unit = "%",
+  label = "CPU utilization",
 }: {
   points: { time: string; value: number | null }[];
   threshold?: number;
+  unit?: string;
+  label?: string;
 }) {
   const id = useId().replace(/:/g, ""),
     width = 650,
@@ -350,8 +339,12 @@ function Chart({
           new Date(points[0]?.time).getTime(),
       )) *
       (width - 2 * pad);
+  const max =
+    unit === "%"
+      ? 100
+      : Math.max(1, threshold || 0, ...points.map((p) => p.value || 0)) * 1.1;
   const y = (value: number) =>
-    height - pad - (value / 100) * (height - 2 * pad);
+    height - pad - (value / max) * (height - 2 * pad);
   if (!points.length)
     return <p className="muted">No metric samples for this time window.</p>;
   return (
@@ -359,7 +352,7 @@ function Chart({
       <svg
         viewBox={`0 0 ${width} ${height}`}
         role="img"
-        aria-label={`CPU utilization over time${threshold !== undefined ? `, threshold ${threshold}%` : ""}`}
+        aria-label={`${label} over time${threshold !== undefined ? `, threshold ${threshold}${unit}` : ""}`}
       >
         <defs>
           <linearGradient id={`fill-${id}`} x1="0" x2="0" y1="0" y2="1">
@@ -367,7 +360,7 @@ function Chart({
             <stop offset="100%" stopColor="#16947c" stopOpacity="0" />
           </linearGradient>
         </defs>
-        {[0, 25, 50, 75, 100].map((v) => (
+        {[0, max * 0.25, max * 0.5, max * 0.75, max].map((v) => (
           <g key={v}>
             <line
               x1={pad}
@@ -378,7 +371,10 @@ function Chart({
               strokeDasharray="3 5"
             />
             <text x="0" y={y(v) + 3} fontSize="8" fill="#8a9690">
-              {v}
+              {v.toLocaleString(undefined, {
+                notation: "compact",
+                maximumFractionDigits: 1,
+              })}
             </text>
           </g>
         ))}
@@ -410,7 +406,8 @@ function Chart({
                     fill="#dc9051"
                   >
                     <title>
-                      {new Date(p.time).toLocaleString()}: {p.value}%
+                      {new Date(p.time).toLocaleString()}: {p.value}
+                      {unit}
                     </title>
                   </circle>
                 ))}
@@ -434,7 +431,8 @@ function Chart({
               fontSize="9"
               fill="#af7645"
             >
-              {threshold}% threshold
+              {threshold}
+              {unit} threshold
             </text>
           </g>
         )}
