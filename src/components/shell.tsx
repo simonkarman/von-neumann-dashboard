@@ -390,6 +390,8 @@ export function Shell() {
                   ? "GitHub Copilot"
                   : session?.provider === "vertex"
                     ? "Vertex AI"
+                    : session?.provider === "bedrock"
+                      ? "Amazon Bedrock"
                     : "OpenAI"}
               <span className="footer-divider">·</span>
               {session?.canEdit
