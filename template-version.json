@@ -1,18 +1,25 @@
 {
-  "version": 2,
+  "version": 3,
   "files": {
     "src/lib/types.ts": [
+      "42606b30f075122e56f9e2b10eb1b77885fca93f51a757ffec1dbbf7ca8747c1",
       "7816d6ea0d133a33420faa26dce31cea56894e5d419eac335b7ca18d9fed9680"
     ],
     "src/components/widgets.tsx": [
+      "948d821ad6c885f399459dd05be232452f0ce28939cd732166183f5cc2ed1e66",
       "e4a120135c1f95a4b242e1743db89f52a4de8153bd7548174bc7d13eef08ba8b"
     ],
-    "src/components/data-table.tsx": ["missing"],
+    "src/components/data-table.tsx": ["missing", "214d9fe4c63f4d801deba57d12c86af1467ee9d555e0b91af2305341929bc024"],
+    "src/components/custom-widget.tsx": ["missing"],
+    "public/custom/engine.mjs": ["missing"],
+    "public/custom/worker.mjs": ["missing"],
+    "public/custom/LICENSE.txt": ["missing"],
     "src/components/shell.tsx": [
       "c5671860289c1abbed1e51978ad416cc9881743bef9a7cf0d5601b619268eedd",
       "cb10c0c43294a57bcfa972e3a402aa8902fb71205d4705b689dd1dfcd200cba1"
     ],
     "src/app/globals.css": [
+      "34cb297cd28ac7ecb1d2605f07eb1c84e8d2e2c218022ca3434205e5921ba4ea",
       "205a3090da3fe24bcd9e632944726dc8a75ae9f291f3457dc73e8d357e69f54f"
     ]
   }

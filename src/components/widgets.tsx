@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useId, useState } from "react";
 import { DataTable } from "./data-table";
+import { CustomWidget } from './custom-widget';
 import {
   Activity,
   ArrowDownToLine,
@@ -59,7 +60,7 @@ export function DashboardGrid({ spec }: { spec: DashboardSpec }) {
   return (
     <div className="widget-grid">
       {spec.widgets.map((widget) => (
-        <Widget key={widget.id + JSON.stringify(widget)} widget={widget} />
+        widget.type === 'custom' ? <CustomWidget key={widget.id + JSON.stringify(widget)} widget={widget} /> : <Widget key={widget.id + JSON.stringify(widget)} widget={widget} />
       ))}
     </div>
   );
@@ -71,11 +72,17 @@ function Widget({ widget: w }: { widget: WidgetSpec }) {
     [query, setQuery] = useState<Query | undefined>(w.query);
   const [resources, setResources] = useState<any[]>([]);
   async function refresh() {
-    if (!query) return;
+    if (!query && !w.series) return;
     setLoading(true);
     setError("");
     try {
-      setData(
+      if (w.series) {
+        const series = await Promise.all(w.series.map(async s => {
+          try { return { label: s.label, ...await api(`/api/sessions/${getSessionId()}/query`, { connectorId: w.connectorId, query: s.query }) }; }
+          catch (e) { return { label: s.label, points: [], error: (e as Error).message }; }
+        }));
+        setData({ series });
+      } else setData(
         await api(`/api/sessions/${getSessionId()}/query`, {
           connectorId: w.connectorId,
           query,
@@ -178,7 +185,8 @@ function Widget({ widget: w }: { widget: WidgetSpec }) {
         </p>
       )}
       {w.type === "text" && <p className="note-content">{w.content}</p>}
-      {(w.type === "chart" || w.type === "metric") &&
+      {w.type === 'chart' && data?.series && <MultiChart series={data.series} threshold={w.threshold} />}
+      {(w.type === "chart" || w.type === "metric") && !w.series &&
         (data ? (
           <>
             <div className="metric-value">
@@ -305,6 +313,24 @@ function Widget({ widget: w }: { widget: WidgetSpec }) {
       )}
     </section>
   );
+}
+function MultiChart({ series, threshold }: { series: any[]; threshold?: number }) {
+  const colors = ['#178c76','#4263c7','#c35c30','#933db0','#b38013','#34758b'];
+  const points = series.flatMap(s => s.points || []);
+  const times = points.map(p => Date.parse(p.time)).filter(Number.isFinite);
+  const start = Math.min(...times), end = Math.max(...times);
+  const max = series.every(s => !s.unit || s.unit === '%') ? 100 : Math.max(1, threshold || 0, ...points.map(p => p.value || 0)) * 1.1;
+  const x = (p: any) => 30 + (Date.parse(p.time) - start) / Math.max(1, end - start) * 600;
+  const y = (value: number) => 174 - value / max * 150;
+  return <div className="chart multi-chart">
+    {times.length > 0 ? <svg viewBox="0 0 650 200" role="img" aria-label={`Multi-resource time series${threshold === undefined ? '' : `, threshold ${threshold}`}`}>
+      {[0,.25,.5,.75,1].map(n => <g key={n}><line x1="30" x2="630" y1={y(n*max)} y2={y(n*max)} stroke="#e8edeb" /><text x="0" y={y(n*max)+3} fontSize="9">{Math.round(n*max)}</text></g>)}
+      {series.map((s,i) => { let pen = false; const path = (s.points || []).map((p: any) => { if (p.value == null) { pen = false; return ''; } const command = `${pen ? 'L' : 'M'}${x(p)},${y(p.value)}`; pen = true; return command; }).join(' '); return <g key={i}><path d={path} fill="none" stroke={colors[i%colors.length]} strokeWidth="2" />{(s.points || []).filter((p: any) => p.value != null && threshold !== undefined && p.value > threshold).map((p: any,j: number) => <circle key={j} cx={x(p)} cy={y(p.value)} r="3" fill="#dd733d"><title>{s.label}: {p.value} at {p.time}</title></circle>)}</g>; })}
+      {threshold !== undefined && <g><line x1="30" x2="630" y1={y(threshold)} y2={y(threshold)} stroke="#d88445" strokeDasharray="4 4" /><text x="32" y={y(threshold)-4} fontSize="10">Threshold {threshold}</text></g>}
+      <text x="30" y="195" fontSize="9">{new Date(start).toLocaleString()}</text><text x="630" y="195" textAnchor="end" fontSize="9">{new Date(end).toLocaleString()}</text>
+    </svg> : <p>No metric samples for this time window.</p>}
+    <div className="series-legend">{series.map((s,i) => <p key={i}><span style={{ color: colors[i%colors.length] }}>●</span> {s.label} — {s.error || (s.points?.length ? `${s.points.at(-1).value ?? '—'} ${s.unit || '%'} at ${new Date(s.points.at(-1).time).toLocaleString()}` : 'No samples (possibly stopped)')}</p>)}</div>
+  </div>;
 }
 function Chart({
   points,

@@ -93,12 +93,14 @@ export type Query =
     };
 export interface WidgetSpec {
   id: string;
-  type: "chart" | "metric" | "logs" | "table" | "text";
+  type: "chart" | "metric" | "logs" | "table" | "text" | "custom";
   title: string;
   description: string;
   width: "half" | "full";
   connectorId: "aws";
   query?: Query;
+  series?: { label: string; query: Query }[];
+  custom?: { source: string; bindings: { id: string; query: Query }[] };
   threshold?: number;
   content?: string;
   groupBy?: string;

@@ -39,6 +39,7 @@ export function Shell() {
     [mobileNav, setMobileNav] = useState(false);
   const input = useRef<HTMLTextAreaElement>(null),
     bottom = useRef<HTMLDivElement>(null),
+    chatScroll = useRef<HTMLDivElement>(null),
     cancel = useRef<AbortController | null>(null);
   const refresh = () =>
     api<Session>(`/api/sessions/${getSessionId()}`).then(setSession);
@@ -55,7 +56,8 @@ export function Shell() {
     return () => window.removeEventListener("suggest-prompt", listener);
   }, []);
   useEffect(() => {
-    bottom.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    const el = chatScroll.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, [messages, status]);
   async function send(event: FormEvent) {
     event.preventDefault();
@@ -102,6 +104,10 @@ export function Shell() {
             );
           }
           if (event.type === "error") throw new Error(event.message);
+          if (event.type === 'updated') {
+            await refresh();
+            window.dispatchEvent(new Event('dashboard-updated'));
+          }
           if (event.type === "done") {
             await refresh();
           }
@@ -266,6 +272,7 @@ export function Shell() {
             )}
           </div>
         </header>
+        <div className="workspace-panes">
         <div className="dashboard-content">
           <div className="dashboard-title">
             <div>
@@ -286,6 +293,8 @@ export function Shell() {
             </span>
           </div>
           <GeneratedDashboard />
+        </div>
+        <aside className="chat-pane" aria-label="Dashboard assistant">
           {messages.length > 0 && (
             <section className="conversation">
               <button
@@ -300,7 +309,7 @@ export function Shell() {
                 />
               </button>
               {showChat && (
-                <div className="messages" aria-live="polite">
+                <div className="messages" ref={chatScroll} aria-live="polite">
                   {messages.map((m, i) => (
                     <div className={`message ${m.role}`} key={i}>
                       <span className="message-avatar">
@@ -319,7 +328,6 @@ export function Shell() {
               )}
             </section>
           )}
-        </div>
         <div className="composer-area">
           {error && (
             <div className="error-banner" role="alert">
@@ -419,6 +427,8 @@ export function Shell() {
               )}
             </span>
           </div>
+        </div>
+        </aside>
         </div>
       </main>
       {history && (
