@@ -4,3 +4,14 @@ node_modules/
 .runtime-home/
 *.tsbuildinfo
 next-env.d.ts
+.data/
+.aws/
+**/*credentials*.json
+**/*service-account*.json
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+.DS_Store

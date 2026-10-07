@@ -1,11 +1,18 @@
-# Von Neumann base dashboard
+# Von Neumann Dashboard template
 
-This is the second, independent repository used by the Von Neumann platform. It contains a single-page Next.js app with a permanent prompt interface and a validated component toolkit.
+The separate Next.js/React template for `von-neumann-platform`. Clone it into the platform checkout's ignored `dashboard-base/` directory. The platform README covers local, Docker and account-agnostic AWS deployment; this template alone is not the backend.
 
-`main` starts with an empty dashboard. The platform clones it and creates `session/<24-character-id>` branches. Each accepted edit changes `dashboard.json` and `src/generated/Dashboard.tsx`, validates TypeScript, commits, and pushes.
+```bash
+npm ci
+npm run check
+```
 
-Run `npm ci` and `npm run check` to work on this template. To preview under a session prefix use `SESSION_ID=<id> WATCHPACK_POLLING=1000 npm run dev`; the full prompt/data workflow requires the platform API and authenticated reverse proxy. Running the template by itself is not a standalone deployment of the platform.
+`main` contains an empty `dashboard.json`. The platform creates `session/<24-character-id>` branches, updates specifications/generated source, checks TypeScript, commits and pushes accepted edits. The trusted shell owns sharing/chat and the permanent prompt. UI remains on one page. A preview can use `SESSION_ID=<24-character-id> WATCHPACK_POLLING=1000 npm run dev`; data/chat require the platform reverse proxy.
 
-Trusted components live in `src/components/widgets.tsx`; sharing, history, and chat live in `src/components/shell.tsx`. Extend the widget schema in BOTH repositories when adding a new capability. Never embed data credentials or provider keys in this repository. `dashboard.json` is the portable source of dashboard state, while chat and sharing tokens stay in the platform database.
+Trusted widgets live in `src/components/widgets.tsx`; chat/shell in `src/components/shell.tsx`. Custom source is inert JSON interpreted in an isolated QuickJS/WASM worker, not an imported React module. Extend contracts in both repositories together. Keep lockfiles/interpreter bundles compatible with the session image; rebuild the bundle from the platform using `npm run build:custom`.
 
-Publish this repository to your chosen Git host, then set `DASHBOARD_REPO_URL` in the infrastructure environment. Session branches contain UI configuration, not a snapshot of cloud data. Keep the template dependency lockfile compatible with the platform's pinned session image.
+No original author's cloud identity, domain or account is required. Never embed keys, tokens or real data in the template. Environments/credential files are ignored, but review staged changes and scan full history before publication.
+
+The platform defaults to a private local bare Git remote, not this GitHub repository. Publishing template `main` does not upload production session branches. If using `DASHBOARD_REPO_URL`, choose a private remote and separately provision scoped Git authentication in the trusted platform; never put tokens in URLs. Session specs/custom code can contain sensitive identifiers/text. SQLite chat/audit/sharing state needs separate backup.
+
+Never publish template source with `git push --all` or `--mirror` from a production data repository. Keep Next.js development servers behind the authenticated platform.
