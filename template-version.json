@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 5,
   "files": {
     "src/lib/types.ts": [
       "42606b30f075122e56f9e2b10eb1b77885fca93f51a757ffec1dbbf7ca8747c1",
@@ -15,10 +15,13 @@
     "public/custom/worker.mjs": ["missing"],
     "public/custom/LICENSE.txt": ["missing"],
     "src/components/shell.tsx": [
+      "bbe331b460362e9d0ba6ce60dcc520bddebb395cf12701dd8b0981d26062c502",
+      "10992922c98f36ac20febfadd7460bec7a554ea4d6bc7117771c10e320c5a433",
       "c5671860289c1abbed1e51978ad416cc9881743bef9a7cf0d5601b619268eedd",
       "cb10c0c43294a57bcfa972e3a402aa8902fb71205d4705b689dd1dfcd200cba1"
     ],
     "src/app/globals.css": [
+      "7c38a86290e5b64952193a416f71054235f5b7776c57cdb556c401f7a0221fcc",
       "34cb297cd28ac7ecb1d2605f07eb1c84e8d2e2c218022ca3434205e5921ba4ea",
       "205a3090da3fe24bcd9e632944726dc8a75ae9f291f3457dc73e8d357e69f54f"
     ]

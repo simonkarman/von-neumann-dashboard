@@ -17,6 +17,7 @@ import {
   GitBranch,
   Square,
   ShieldCheck,
+  LogOut,
 } from "lucide-react";
 import GeneratedDashboard from "../generated/Dashboard";
 import {
@@ -37,6 +38,9 @@ export function Shell() {
     [showChat, setShowChat] = useState(true),
     [history, setHistory] = useState<any[] | null>(null),
     [mobileNav, setMobileNav] = useState(false);
+  const [recent, setRecent] = useState<Session[]>([]);
+  const [sourceInfo, setSourceInfo] = useState<"aws" | "add" | null>(null);
+  const sourceDialog = useRef<HTMLDialogElement>(null);
   const input = useRef<HTMLTextAreaElement>(null),
     bottom = useRef<HTMLDivElement>(null),
     chatScroll = useRef<HTMLDivElement>(null),
@@ -59,6 +63,20 @@ export function Shell() {
     const el = chatScroll.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, [messages, status]);
+  useEffect(() => {
+    if (!session?.canEdit) { setRecent([]); return; }
+    let alive = true;
+    api<Session[]>("/api/sessions").then(items => { if (alive) setRecent(items.slice(0, 6)); }).catch(() => {});
+    return () => { alive = false; };
+  }, [session?.canEdit, session?.revision]);
+  useEffect(() => {
+    if (sourceInfo) sourceDialog.current?.showModal();
+    else sourceDialog.current?.close();
+  }, [sourceInfo]);
+  async function logout() {
+    try { await api("/api/auth/logout", {}); window.location.href = "/"; }
+    catch (e) { setError((e as Error).message); }
+  }
   async function send(event: FormEvent) {
     event.preventDefault();
     if (!prompt.trim() || busy || !session?.canEdit) return;
@@ -179,70 +197,52 @@ export function Shell() {
             von neumann<small>YOUR DATA, IN CONVERSATION</small>
           </span>
         </a>
-        <div className="workspace-label">
-          <span className="workspace-avatar">W</span>My workspace
-          <ChevronDown size={13} />
-        </div>
-        <div className="nav-section">
+        <div className="sidebar-scroll">
+        <nav className="nav-section" aria-label="Workspace">
           <span className="eyebrow">WORKSPACE</span>
           <a href="/">
             <LayoutDashboard size={16} />
-            All dashboards<span className="shortcut">⌘ K</span>
+            All dashboards
           </a>
-          <button className="active">
-            <span className="nav-dot" />
-            {session?.title || "Untitled dashboard"}
-          </button>
           {session?.canEdit && (
             <button onClick={newSession}>
               <Plus size={16} />
               New dashboard
             </button>
           )}
+        </nav>
+        <nav className="nav-section recent-section" aria-label={session?.canEdit ? "Recent dashboards" : "Shared dashboard"}>
+          <span className="eyebrow">{session?.canEdit ? "RECENT DASHBOARDS" : "SHARED DASHBOARD"}</span>
+          <div className="recent-links">
+            {(session?.canEdit ? recent : session ? [session] : []).map(item => (
+              <a className="recent-link" key={item.id} href={`/${item.id}`} title={item.title} aria-label={item.title} aria-current={item.id === getSessionId() ? "page" : undefined}>{item.title}</a>
+            ))}
+            {session?.canEdit && !recent.length && <p className="recent-empty">Your recent dashboards will appear here.</p>}
+          </div>
+        </nav>
         </div>
-        <div className="nav-section connections">
+        <div className="sidebar-bottom">
+        <div className="connections">
           <span className="eyebrow">
             CONNECTED SOURCES <span>1</span>
           </span>
-          <div className="connector">
+          <button type="button" className="connector source-button" aria-label="About Amazon Web Services source" onClick={() => setSourceInfo("aws")}>
             <span className="aws-icon">
               <Cloud size={18} />
             </span>
-            <div>
+            <span className="source-copy">
               Amazon Web Services
               <small>
                 {session?.mode === "demo"
                   ? "Demo connector"
                   : "Read-only connector"}
               </small>
-            </div>
+            </span>
             <span className="dot" />
-          </div>
+          </button>
+          {session?.canEdit && <button type="button" className="add-source" onClick={() => setSourceInfo("add")}><Plus size={15} />Add source</button>}
         </div>
-        <div className="sidebar-bottom">
-          <div className="mode-note">
-            <ShieldCheck size={16} />
-            <div>
-              {session?.mode === "demo"
-                ? "You’re in demo mode"
-                : "Your data stays in control"}
-              <small>
-                {session?.mode === "demo"
-                  ? "Explore with sample AWS data"
-                  : "Queries use restricted access"}
-              </small>
-            </div>
-          </div>
-          <a href="/" className="user-card">
-            <span className="avatar">VN</span>
-            <div>
-              My workspace
-              <small>
-                {session?.canEdit ? "Workspace editor" : "Shared · view only"}
-              </small>
-            </div>
-            <ArrowLeft size={14} />
-          </a>
+          {session?.canEdit ? <button type="button" className="logout-button" onClick={logout}><LogOut size={16} />Log out</button> : <a href="/" className="logout-button"><ArrowLeft size={16} />Back to sign in</a>}
         </div>
       </aside>
       <main className="main">
@@ -251,6 +251,7 @@ export function Shell() {
             className="icon-button mobile-menu"
             onClick={() => setMobileNav(!mobileNav)}
             aria-label="Toggle navigation"
+            aria-expanded={mobileNav}
           >
             <PanelLeftClose size={18} />
           </button>
@@ -431,6 +432,19 @@ export function Shell() {
         </aside>
         </div>
       </main>
+      <dialog ref={sourceDialog} className="source-dialog" aria-labelledby="source-dialog-title" onClose={() => setSourceInfo(null)}>
+        <span className="eyebrow">{sourceInfo === "add" ? "COMING LATER" : "CONNECTED SOURCES"}</span>
+        <h2 id="source-dialog-title">{sourceInfo === "add" ? "Add a source" : "Amazon Web Services"}</h2>
+        {sourceInfo === "add" ? <>
+          <p>Adding sources from the interface is not available yet. This version supports one AWS connector, configured by the deployment operator on the server.</p>
+          <p>Additional connector types need backend integration. Do not paste credentials into the chat.</p>
+        </> : <>
+          <p>{session?.mode === "demo" ? "Demo mode uses synthetic sample data. No live AWS account is queried." : "This workspace is connected to AWS through its server-side identity. Available resources depend on its configured scope."}</p>
+          <p>The connector exposes approved, read-only operations for resource metadata, metrics and permitted logs. Access is enforced by the backend and configured AWS permissions. DynamoDB record access is separately restricted.</p>
+          <p>Credentials are managed on the server, never in your dashboard. Sharing a widget can expose its bound data to the link holder.</p>
+        </>}
+        <form method="dialog"><button className="secondary">{sourceInfo === "add" ? "Got it" : "Close source details"}</button></form>
+      </dialog>
       {history && (
         <div className="modal-backdrop" onClick={() => setHistory(null)}>
           <section

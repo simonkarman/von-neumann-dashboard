@@ -1209,3 +1209,31 @@ td {
   .composer-area { padding: 8px 12px; }
   .conversation { padding: 8px 12px; }
 }
+/* Sidebar: navigation scrolls; source controls and logout stay at the bottom. */
+.sidebar { overflow-y: auto; overscroll-behavior: contain; }
+.sidebar > .brand, .sidebar-bottom { flex-shrink: 0; }
+.sidebar-scroll { margin-top: 34px; min-height: 90px; overflow-y: auto; flex: 1; }
+.recent-section { margin-top: 26px; }
+.recent-links { display: flex; flex-direction: column; gap: 3px; }
+.recent-link { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 10px 12px; border-radius: 6px; font-size: 12px; color: #66796d; }
+.recent-link::before { content: "▤"; margin-right: 10px; color: #7e9484; }
+.recent-link:hover, .recent-link[aria-current="page"] { background: #e1ebe1; color: #285c46; }
+.recent-link[aria-current="page"] { font-weight: 600; }
+.recent-empty { padding: 0 10px; font-size: 11px; color: #819088; line-height: 1.6; }
+.sidebar-bottom { padding-top: 22px; }
+.sidebar-bottom .connections { margin-top: 0; border-top: 1px solid #dce5de; padding-top: 20px; }
+.connections > .eyebrow { display: flex; justify-content: space-between; padding: 0 10px; margin-bottom: 10px; }
+.source-button { width: 100%; border: 0; background: transparent; border-radius: 7px; text-align: left; color: #344d40; cursor: pointer; }
+.source-button:hover { background: #e5eee5; }
+.source-button .aws-icon { flex-shrink: 0; }
+.source-copy { min-width: 0; font-size: 10px; }
+.add-source, .logout-button { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: transparent; color: #587162; padding: 12px 10px; border-radius: 6px; text-align: left; font-size: 12px; cursor: pointer; }
+.add-source:hover, .logout-button:hover { background: #e5eee5; color: #254e38; }
+.logout-button { margin-top: 14px; border-top: 1px solid #dce5de; border-radius: 0; padding-top: 17px; }
+.logout-button[hidden] { display: none; }
+.source-dialog { max-width: 460px; width: calc(100vw - 40px); max-height: 85vh; overflow: auto; border: 1px solid #dce5dd; border-radius: 13px; padding: 30px; background: #fafcf8; color: var(--ink); box-shadow: 0 20px 80px #1c311f20; }
+.source-dialog::backdrop { background: #23352670; backdrop-filter: blur(3px); }
+.source-dialog h2 { font-family: Manrope, sans-serif; font-size: 24px; margin: 12px 0; }
+.source-dialog p { font-size: 13px; line-height: 1.8; color: #65796b; }
+.source-dialog form { display: flex; justify-content: flex-end; margin-top: 22px; }
+@media (max-width: 700px) { .sidebar.open { padding-top: 65px; } .mobile-menu { z-index: 25; } }
